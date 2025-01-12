@@ -1,0 +1,556 @@
+---
+title: "Editor : command(편집 명령) 기능 구현 (1)"
+coverImage: ""
+date: "2025-01-13"
+---
+
+## 초기 구현
+
+### 구현 계기
+
+소마 중간 평가에서 커맨드 기능이 없어서 사용하기 불편하다는 피드백을 받기도 하였고, 사용자가 사용하기 편리한 에디터를 제작하고자 하는 목표를 가지고 있었는데 내가 사용해봐도 불편해서 이전부터 꼭 만들어야 겠다는 다짐을 했던 기능이었다. 사용자들이 기본적으로 많이 사용하는 undo, redo, copy, paste 기능을 구현하는 것을 최우선 목표로 기능을 설계하기 시작하였다. 
+
+---
+
+### 구현 방식
+
+에디터에 그려지는 카드 데이터는 cardStore에서 관리하고 있었다. 간단하게 설명하자면 에디터 화면에 그려지는 card data들은 중첩된 객체 형태로 관리되고, cardStore의 메서드들을 사용하여 중첩된 데이터 중 변경하고 싶은 곳에 접근하여 데이터를 수정한다. 
+
+커맨드를 사용하여 카드 데이터를 변경하거나 카드 데이터의 변경을 인지해서 상태를 기록해야 하므로 command를 위한 스토어를 생성하되, 각자 스토어의 메서드를 이용하여 다른 스토어의 상태를 변경시키는 방식으로 구현해야겠다는 생각을 하게 되었다. 다른 스토어에서 상태를 변경할 수 있게 하는 것이 좋은 방식일까? 고민을 했었는데 현재 관리하고 있는 방식을 변경하지 않는 선에서 새로운 기능을 추가하려면 이 방식이 제일 간단할 것이라 구현하게 되었다.
+
+> **useCommandStore**
+> : 이전, 이후, 클립보드 값들을 저장하고, 커맨드를 사용해 이를 조작할 수 있는 스토어
+> \- useCardStore의 Card 값들에 변화가 일어나면 자동으로 인식해서 커맨드를 추가한다.
+> \- 커맨드가 실행되어 상태가 변경되어야 하면, useCardStore의 메서드를 호출하여 Card 값을 변경한다.
+
+---
+
+### command 타입 정의
+
+```typescript
+import { Background, Card, Layer } from '@/store/useCardsStore/type';
+
+export type CommandType =
+  | 'ADD_LAYER'
+  | 'DELETE_LAYER'
+  | 'MODIFY_LAYER'
+  | 'MODIFY_BACKGROUND'
+  | 'ADD_CARD'
+  | 'DELETE_CARD'
+;
+
+type BaseCommand = {
+  type: CommandType;
+  cardId: number;
+};
+
+type LayerCommand = BaseCommand & {
+  type: 'ADD_LAYER' | 'DELETE_LAYER' | 'MODIFY_LAYER' | 'COPY' | 'PASTE';
+  layerId: number;
+  layerData: Layer;
+};
+
+type BackgroundCommand = BaseCommand & {
+  type: 'MODIFY_BACKGROUND';
+  backgroundData: Partial<Background>;
+};
+
+type CardCommand = BaseCommand & {
+  type: 'ADD_CARD' | 'DELETE_CARD';
+  cardData: Card;
+};
+
+export type Command = LayerCommand | BackgroundCommand | CardCommand;
+```
+
+> **CommandType** : 커맨드로 변경할 수 있는 값은 크게 배경(변경)과 요소(추가, 삭제, 변경)
+> \- 카드 전체를 수정 변경할 때 필요한 CARD 커맨드도 있으나 현재는 타입 정의만 하고 구현은 되어 있지 않음
+>    - BaseCommand : 커맨드가 가져야 할 기본값으로 type과 cardId
+>    - LayerCommand : 변경된 layerId와 변경 후의 데이터 layerData
+>    - BackgroundCommand : 변경된 background의 데이터 backgroundData
+>    - CardCommand : 변경된 card의 데이터 cardData
+
+#### TypeGaurd
+
+```
+// 타입 가드 함수
+export const isLayerCommand = (command: Command): command is LayerCommand => {
+  return ['ADD_LAYER', 'DELETE_LAYER', 'MODIFY_LAYER'].includes(command.type);
+};
+
+export const isBackgroundCommand = (command: Command): command is BackgroundCommand => {
+  return command.type === 'MODIFY_BACKGROUND';
+};
+```
+
+어떤 커맨드인지 확인하기 위한 타입 가드 함수들도 작성해주었다. is 문법을 사용하여 스코프 내에서 해당 타입으로 간주될 수 있도록 하였다.
+
+> "\`pet is Fish\` is our type predicate in this example. A predicate takes the form \`parameterName is Type\`, where \`parameterName\` must be the name of a parameter from the current function signature.
+> Any time \`isFish\` is called with some variable, TypeScript will narrow that variable to that specific type if the original type is compatible."  - [typescript document](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates "TypeScript Document")
+
+is를 사용하면 원래 유형이 호환되는 동안(해당 함수를 거쳤을때 true인 경우) 해당 변수를 특정 유형으로 축소한다. 따라서 isLayerCommand를 호출한 곳에서 true라면 그 스코프 내에서 layer는 자동으로 LayerCommand로 인식된다.
+
+### useCommandStore
+
+#### commandStore 타입정의
+
+```
+type commandStore = {
+  past: Command[];
+  future: Command[];
+  clipboard: Layer | null;
+
+  addCommand: (command: Command) => void;
+  undo: () => void;
+  redo: () => void;
+
+  copy: (cardId: number, layerId: number) => void;
+  paste: (cardId: number) => void;
+};
+```
+
+> **state**
+> \- **past** : 과거의 커맨드를 기록하는 스택 -> 새로운 변화가 일어나면 저장됨
+> \- **future** : 미래의 커맨드를 기록하는 스택 -> undo하면서 과거로 돌아가서 현재 상태를 미래에 저장
+> \- **clipboard** : 복사, 붙여넣기 할 값을 저장
+
+> **method**
+> \- **addCommand** : 커맨드를 past에 추가하는 메서드. 상태 변경 발생시 호출됨
+> \- **undo** : 과거 커맨드를 꺼내서 적용(커맨드 반대로 적용) -> 현재 커맨드 취소. 현재 커맨드를 future에 저장
+> \- **redo** : 미래 커맨드를 꺼내서 다시 적용(취소했던 커맨드 적용)
+> \- **copy** : 현재 focus된 레이어를 클립보드에 저장
+> \- **paste** : 클립보드에 있는 레이어를 추가
+
+### method
+
+**addCommand**
+
+- 과거의 커맨드와 비교해서 똑같은 커맨드면 추가하지 않는다. (\`areCommandsEqual\` 함수 사용하여 비교)
+- 현재 커맨드를 history인 past 스택에 넣고, future 스택을 초기화 한다.
+
+```
+addCommand: (command) => {
+    set(
+      produce((draft) => {
+        const currentPast = get().past;
+
+        // 과거 커맨드와 비교해서 같으면 추가하지 않음
+        if (currentPast.length > 0) {
+          const pastCommand = currentPast[currentPast.length - 1];
+
+          if (areCommandsEqual(pastCommand, command)) return;
+        }
+        // 새로 수행된 작업을 기록하고, 미래는 초기화
+        draft.past.push(command);
+        draft.future = [];
+      })
+    );
+  },
+```
+
+**undo, redo**
+
+- undo : 현재 변화를 취소하고 뒤로 돌아가는 작업이므로, 과거 상태를 꺼내서 다시 적용하고 현재 상태를 future에 저장한다
+- redo :  이전에 취소했던 미래의 변화를 다시 적용하는 작업이므로, 미래 상태를 꺼내서 적용하고 현재 상태는 past에 저장한다
+
+```
+  undo: () =>
+    set(
+      produce((draft) => {
+        if (draft.past.length > 0) {
+          const pastCommand = draft.past.pop();
+          const currentCommand = getCurrentCommand(pastCommand);
+          draft.future.push(currentCommand);
+
+          undoCommand(JSON.parse(JSON.stringify(pastCommand)));
+        }
+      })
+    ),
+
+  redo: () =>
+    set(
+      produce((draft) => {
+        if (draft.future.length > 0) {
+          const futureCommand = draft.future.pop();
+          const currentCommand = getCurrentCommand(futureCommand);
+          draft.past.push(currentCommand);
+
+          executeCommand(JSON.parse(JSON.stringify(futureCommand)));
+        }
+      })
+    ),
+```
+
+**copy, paste**
+
+- copy : 현재 요소를 기억하기 위해 focus된 요소를 가져와서 클립보드에 저장한다.
+- paste : 복사된 요소를 붙여넣기 위함이니 클립보드의 요소를 새로운 레이어로 추가한다.
+
+```
+copy: (cardId, layerId) =>
+    set(
+      produce((draft) => {
+        const cardsStore = useCardsStore.getState();
+        const currentLayer = cardsStore.getLayer(cardId, layerId);
+
+        if (!currentLayer) return;
+
+        draft.clipboard = currentLayer;
+      })
+    ),
+
+  paste: cardId => {
+    set(
+      produce(draft => {
+        if (!draft.clipboard) return;
+
+        const cardsStore = useCardsStore.getState();
+        cardsStore.addDuplicateLayer(cardId, JSON.parse(JSON.stringify(draft.clipboard)));
+      }),
+    );
+  },
+```
+
+---
+
+각 메서드들을 작성할 때 주의해야 할 점이 있었는데 바로 Proxy 객체인 draft를 다루는 일이었다. 
+
+나는 중첩 객체를 쉽게 변경하기 위하여 Immer 라이브러리를 적용하고 있다. 객체 상태를 업데이트 할 시에는 불변성을 지키기 위하여 객체를 복사하여서 값을 변경하고 다시 적용하는 작업을 해줘야 한다. 그러나 카드 데이터는 중첩 depth가 매우 깊어서 매 변경마다 스프레드 연산자를 사용하여 객체를 복사하기란 어렵다고 생각이 들어서 불변성을 유지하면서 변경해주는 Immer 라이브러리를 사용하게 되었다.
+
+### immer의 동작 방식?
+
+[Immer](https://immerjs.github.io/immer/)는 데이터가 immutable(불변성을 유지하며)하게 업데이트 되는 것을 보장해주는 라이브러리다.
+
+immer는 기본적으로 모든 변경상태를 현재 상태의 proxy인 draft에 적용한다. 변경이 모두 완료되면 Immer는 draft 상태의 변경을 기반으로 다음(변경된) 상태를 생성한다. 원본을 바로 변경하는 것이 아니라 draft(Proxy)라는 비서를 사용해서 변경된 상태를 만들어 업데이트 하는 것이다.
+
+Immer는 모든 변경을 수행하는 produce 라는 함수를 제공한다. 어떻게 변경할 것인지에 대한 레시피 함수를 작성해서 변경하게 되는데, 이 함수는 보통 아무것도 return 하지 않는다. return을 사용해서 아에 새로운 상태를 반환할 수도 있지만 이렇게 되면 앞서 draft를 수정한게 모두 무시되고 return 된 값으로 상태가 업데이트 된다. 그래서 일부 수정시 draft 사용한 수정 적용, 완전히 새로운 값을 반환하고 싶은 경우 return을 사용하면 된다.
+
+```
+// produce(초기 상태, 레시피 함수)
+const nextState = produce(baseState, draftState => {
+    draftState.push({title: "Tweet about it"})
+    draftState[1].done = true
+})
+```
+
+> **Immer의 변경 흐름**
+> 1\. produce 호출시 현재 상태의 Proxy인 draft를 생성
+> 2\. 우리가 작성한 레시피 함수가 실행됨
+> 3\. 실행이 완료되면(produce 함수가 끝나면), immer는 변경사항을 추적해서 새로운 불변 상태를 생성함
+
+[https://hmos.dev/deep-dive-to-immer#deep-dive-to-immer](https://hmos.dev/deep-dive-to-immer#deep-dive-to-immer)
+
+### Proxy란?
+
+개발하면서 프록시라는 단어를 많이 들어봤을 것이다. 프록시는 '대리'한다는 의미를 가지고 있는데, 자바스크립트에서도 프록시 객체는 **대상 객체 대신 사용할 수 있는 객체를 만들고 기본 객체 작업을 가로채 작업을 재정의 할 수 있는 기능을 제공**한다. 프록시 객체를 사용해서 수정하면 프록시가 대리하여 작업을 수행하고 이는 바로 원본 객체에 적용된다.
+
+```
+// 프록시할 원본 객체
+const target = {
+  message1: "hello",
+  message2: "everyone",
+};
+
+// 가로채는 작업과 가로채는 작업을 재정의 하는 방법을 정의 해놓은 객체
+// 현재 코드에서는 proxy 객체의 프로퍼티를 읽으면 world를 반환하는 행동을 하도록 정의
+const handler2 = {
+  get(target, prop, receiver) {
+    return "world";
+  },
+};
+
+const proxy2 = new Proxy(target, handler2);
+```
+
+Immer는 이러한 프록시를 사용함으로써 불변성을 쉽게 유지하면서 상태를 바꿀 수 있는 방법을 구현하였다. 예를 들어 중첩된 객체의 일부 프로퍼티를 수정하고자 한다면, 우리는 불변성을 위하여 깊은 복사를 통해 완전히 새로운 객체를 만들고, 새로운 객체의 값을 수정한 뒤 교체하는 방식을 진행해야 했다.
+
+그러나 immer의 proxy를 사용한다면 **객체의 일부 값을 변경했을때 immer의 draft proxy handler가 정의한 행동에 따라 변경된 부분만 새로운 객체로 생성하여 업데이트** 하는 방식을 통해 우리가 직접 깊은 복사를 하지 않고도 불변성을 유지하며 객체 업데이트가 가능하게 되는 것이다.
+
+[https://leetrue-log.vercel.app/leetrue-proxy-immer](https://leetrue-log.vercel.app/leetrue-proxy-immer)
+
+다시 돌아와서, draft를 다룰때 왜 주의해야 했는지 말해보자면 **draft의 상태 업데이트 시점** 때문이다. draft는 Proxy 객체이고 draft를 변경한 것이 적용되는 시점은 produce 함수가 다 끝난 후이다. 그러니 produce 내부에서 변경된 값을 사용하고 싶거나, 프록시가 아닌 일반 객체가 필요하다면 proxy 값에서 변경된 상태를 추출하여 사용해야 한다. 
+
+예를 들어 위의 undo 코드에서 \`draft.paft.pop()\`하여서 커맨드를 꺼냈다. 그러나 draft에서 추출한 값이기에 해당 값도 프록시 객체이다. 하지만 우리가 실제 사용하고자 하는 값은 일반 객체이므로 해당 객체를 직렬화하여 일반 객체로 변경한 후에 사용해야 하였다. 
+
+상태를 사용할 때 현재 (프록시 객체가 필요한지 / 일반 객체가 필요한지), (변경이 적용된 값이 필요한지 / 변경이 아직 적용되지 않는 값)이 필요한지 확인하여 접근하는 절차를 거쳐야 한다. (이후에도 이 것때문에 아주 큰 오류가 발생하게 된다. 해당 글의 마지막에 서술되어 있다.)
+
+\- 직렬화 하는법 : \`JSON.parse(JSON.stringify())\`
+
+---
+
+### command를 다룰때 사용한 함수들
+
+**getCurrentCommand**
+
+- undo, redo를 하는 경우에 (다른 커맨드 적용으로) **사라지게 되는 현재 상태를 히스토리에 저장해야 하기 때문에 현재 상태를 가져오는 로직**이 필요하였다
+- undo, redo에 의해 **변경이 일어나는 레이어를 추출해서 저장**한다.
+- focusedLayerId가 아니라 커맨드의 layerId를 사용하는 이유는 포커스 되지 않은 경우에도 redo, undo가 가능하고, 포커스된 요소와 커맨드에 의해 변경되는 요소가 다를 수 있기 때문이다
+
+```
+/**
+ * 현재 상태에 대한 command 가져오는 함수
+ */
+const getCurrentCommand = (command: Command): Command => {
+  const cardsStore = useCardsStore.getState();
+
+  switch (command.type) {
+    case 'ADD_LAYER':
+    case 'DELETE_LAYER':
+    case 'MODIFY_LAYER':
+      const layer = cardsStore.getLayer(command.cardId, command.layerId);
+      if (!layer) return command;
+
+      return {
+        ...command,
+        layerData: layer,
+      };
+    case 'MODIFY_BACKGROUND':
+      const bg = cardsStore.getBackground(command.cardId);
+      if (!bg) return command;
+
+      return {
+        ...command,
+        backgroundData: bg,
+      };
+    default:
+      return { ...command };
+  }};
+```
+
+**executeCommand**
+
+- **커맨드를 실행하는 함수**
+- 값을 변경시키는 함수는 useCardStore에 정의되어 있다. 기존에 에디터에서 카드 상태를 변경시킬 대 사용하던 메서드를 그대로 사용하였다.
+- 주의해야 할 점은 layerId를 확인할때 단축으로 !command.layerId를 적용하면 안된다는 것이다. 아이디에 0 값이 올 수 있기 때문에 단축으로 확인하면 오류가 발생한다
+
+```
+/**
+ * 명령대로 실행하는 함수
+ * 명령에 맞게 값을 변경,삭제,추가함 -> useCardStore의 값을 변경함
+ */
+const executeCommand = (command: Command) => {
+  const { type, cardId } = command;
+  const cardStore = useCardsStore.getState();
+
+  switch (type) {
+    case "ADD_LAYER":
+      if ("layerData" in command && command.layerData) {
+        cardStore.addLayer(cardId, command.layerData as Layer);
+      }
+      break;
+    case "DELETE_LAYER":
+      if ("layerId" in command && command.layerId !== undefined) {
+        cardStore.deleteLayer(cardId, command.layerId);
+      }
+      break;
+    case "MODIFY_LAYER":
+      if ("layerId" in command && "layerData" in command && command.layerId !== undefined && command.layerData) {
+        cardStore.setLayer(cardId, command.layerId, command.layerData);
+      }
+      break;
+    case "MODIFY_BACKGROUND":
+      if ("backgroundData" in command) {
+        cardStore.setBackground(cardId, command.backgroundData);
+      }
+  }
+};
+```
+**undoCommand**
+
+- **커맨드를 반대로 실행시키는 함수** (add - delete, modify는 그대로)
+
+```
+/**
+ * 명령을 반대로 실행하는 함수
+ * undo할 때 이전 명령을 취소하는 커맨드를 실행함
+ */
+const undoCommand = (command: Command) => {
+  const { type, cardId } = command;
+  const cardStore = useCardsStore.getState();
+
+  switch (type) {
+    case "ADD_LAYER":
+      if ("layerData" in command && command.layerId !== undefined) {
+        cardStore.deleteLayer(cardId, command.layerId);
+      }
+      break;
+    case "DELETE_LAYER":
+      if ("layerId" in command && command.layerData && command.layerId !== undefined) {
+        cardStore.addLayer(cardId, command.layerData);
+      }
+      break;
+    case "MODIFY_LAYER":
+      if ("layerId" in command && "layerData" in command && command.layerId !== undefined && command.layerData) {
+        cardStore.setLayer(cardId, command.layerId, command.layerData);
+      }
+      break;
+    case "MODIFY_BACKGROUND":
+      if ("backgroundData" in command) {
+        cardStore.setBackground(cardId, command.backgroundData);
+      }
+  }
+};
+```
+
+**areCommandsEqual**
+
+- **두 커맨드가 완전히 같은지 확인하는 함수**이다.
+- 직접 구현한 isEqual 유틸 함수를 사용하여 객체의 깊은 내부까지 전부 똑같은 key-value를 가지고 있는지 확인한다.
+
+```
+/**
+ * 두 커맨드가 완전히 같은지 확인하는 함수 (깊은 비교)
+ * 커맨드가 같은 경우에는 스택에 추가하지 않기 위해서 사용됨
+ */
+const areCommandsEqual = (command1: Command, command2: Command): boolean => {
+  // 타입, 카드 아이디 비교
+  if (command1.type !== command2.type || command1.cardId !== command2.cardId) {
+    return false;
+  }
+
+  // LayerCommand 비교
+  if (isLayerCommand(command1) && isLayerCommand(command2)) {
+    return command1.layerId === command2.layerId && commonUtils.isEqual(command1.layerData, command2.layerData);
+  }
+
+  // BackgroundCommand 비교
+  if (isBackgroundCommand(command1) && isBackgroundCommand(command2)) {
+    return commonUtils.isEqual(command1.backgroundData, command2.backgroundData);
+  }
+
+  return false;
+};
+```
+
+**isEqual (유틸 함수)**
+
+```
+const isEqual = (obj1: any, obj2: any): boolean => {
+  // 완전히 같은 객체, 같은 값을 가진 원사타입이면 true  if (obj1 === obj2) return true;
+
+  // 객체가 아니거나 null이면 false
+  if (typeof obj1 !== 'object' || obj1 === null
+      || typeof obj2 !== 'object' || obj2 === null) return false;
+
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+
+  // key의 개수가 같지 않으면 false;
+  if (keys1.length !== keys2.length) return false;
+
+  for (const key of keys1) {
+    // 각 key의 value들이 같은지 재귀로 검사
+    if (!keys2.includes(key) || !isEqual(obj1[key], obj2[key])) return false;
+  }
+  return true;
+};
+```
+
+---
+
+## 오류 발생
+
+### 문제 인식
+
+문제를 처음 인식하게 된 계기는 paste에서 addDuplicateLayer를 호출하고 나서 커맨드가 제대로 저장되지 않아서 undo시 원하는 대로 동작하지 않는 문제 때문이었다. 분명 past에 ADD\_LAYER 커맨드가 추가 되는걸 확인하였는데 undo를 실행할 때 보면 past에 커맨드가 추가 되어 있지 않는 이상한 문제 발생하는 것이다. 한참을 씨름하다가 멘토님께 도움을 요청했는데 같이 봐주시면서 오류를 찾아주셨다.
+
+로그로 상태를 추적하는데도 어려움이 많았다. Immer와 Zustand를 사용하면서 각 상태 업데이트 시점을 고려하면서 로그를 찍어야 했다. 업데이트 전과 업데이트 후의 로그를 혼용해 사용하게 되면서 헷갈렸던 것도 오류를 추적하는데 큰 어려움이 되었다.
+
+
+---
+
+### 문제 해결
+
+#### 1차 해결 - 오류 해결
+
+멘토님과 함께 코드를 보면서 오류의 원인을 찾게 되었는데 store간 서로의 메서드를 사용하여 상태를 변경하려고 하여 상태 업데이트가 원하는대로 적용되지 않는 문제였다.
+
+서로가 서로의 store를 참조하면서 command store의 paste에서 card store의 addDuplicateLayer 메서드를 호출하고, card store의 addDuplicateLayer가 command store의 addCommand를 호출하여 커맨드를 추가하는 방식으로 구현하였었다.
+
+그래서 각자가 각자의 상태를 업데이트 하도록, addDuplicateLayer에서 addCommand를 호출하는 것이 아니라 새로 생긴 레이어를 반환하면 command store의 paste에서 레이어를 추가하도록 변경해주었더니 문제가 해결되었다.
+
+```
+// useCommandStore
+paste: cardId => {
+    set(
+      produce(draft => {
+        if (!draft.clipboard) return;
+
+        const cardsStore = useCardsStore.getState();
+
+        const newLayerData = cardsStore.addDuplicateLayer(cardId, JSON.parse(JSON.stringify(draft.clipboard)));
+        if (newLayerData === null) return;
+
+        const { layerId, layerData } = newLayerData;
+        draft.past.push({
+          type: 'ADD_LAYER',
+          cardId,
+          layerId: layerId,
+          layerData: layerData,
+        });
+    }),
+);
+
+// useCardStore
+addDuplicateLayer: (cardId, layer) => {
+    let newLayerId: number | undefined;
+    let newLayer: Layer | undefined;
+
+    set(
+      produce(
+        (draft: Draft<{cards: Card[]; zIndexMap: ZIndexMap;}>,
+        ) => {
+          // ... 생략
+          draft.cards[cardId].layers.push(newLayer);
+
+          if (!draft.zIndexMap[cardId]) {
+            draft.zIndexMap[cardId] = {};
+          }        draft.zIndexMap[cardId][newLayerId] = newZIndex;
+
+          useFocusStore.getState().updateFocus(cardId, newLayerId);
+        },
+     ),
+    );
+    if (newLayerId === undefined || newLayer === undefined) return null;
+
+    return {
+      layerId: newLayerId,
+      layerData: newLayer,
+    };
+}
+```
+
+Immer의 produce 안에서 return하면 값을 반환시키는게 아니라 해당 값으로 draft를 업데이트 한다. 그래서 produce 밖에서 값을 리턴해야 한다.
+
+이렇게 오류를 수정하고나서 오류 원인을 정확하게 파악하지는 못해서 추후에 또 어떤 오류가 발생할지, 또 어떻게 해결해야 할지 예측 불가능하다는 점과 스토어 간 서로의 메소드를 가져와 호출하는 방식이 상태 관리 측면에서 좋지 못하다고 판단하여 후에 나오게 될 방법으로 리팩토링을 진행하였다.
+
+<br />
+
+#### 2차 해결 - 확실하게 원인 파악
+
+그리고 이 글을 작성하면서 오류가 나던 커밋으로 돌아가서 왜 오류가 발생한 것인지 찾기위해 다시 한번 로그를 찍게 되었다. 그리고 마침내 오류 원인을 찾게 되었다.
+
+오류의 정확한 원인은 `paste 메서드에서의 draft 업데이트 방식` 때문이었다.
+
+내가 구현한 로직을 다시 보면 paste에서 addDuplicateLayer를 호출하고, 거기서 또 addCommand를 호출하면서 past 상태가 새로운 커맨드가 추가된 상태로 업데이트 된다. 그러나 paste의 draft는 여전히 업데이트 되지 않았다. 여기서 아주 중요한 지점을 짚고 넘어가고자 한다.
+
+**Immer는 produce 함수가 끝난 후에 값이 변경되면 변경된 값을 기반으로 새로운 상태를 만들고, 값이 변경되지 않으면 기존 상태 객체의 참조를 그대로 반환한다.**
+
+나는 paste의 draft의 past를 변경한 적이 없다. addCommand를 사용하여서 past를 업데이트 하고 돌아왔다. 그렇다면 paste로 다시돌아왔을 때 어떤 상태일까? 실제 상태 객체 past는 값이 업데이트 되어있지만, paste가 가진 draft는 값이 업데이트 되어 있지 않다. 애초에 변경된 적이 없으니 로그에 값이 업데이트 되지 않은 채로 출력되는 것이고, paste가 끝난후에 변경이 없으니 참조하고 있던 원본 상태 객체를 다시 반환하여 업데이트 되기 전의 상태로 다시 변경되어버리는 것이었다. (이유를 알게되어 너무 속시원하다)
+
+
+이 문제를 해결하는 방법은 아주 간단했다. draft를 이용한 상태 업데이트가 일어나지 않으니 **produce 함수를 사용하지 않으면 된다.**
+
+```
+paste: cardId => {
+  const cardsStore = useCardsStore.getState();
+
+  if (get().clipboard) {
+    cardsStore.addDuplicateLayer(cardId, get().clipboard as Layer);
+  }},
+```
+
+<br />
+
+
+PR : [https://github.com/SW-rocket-dan/card-capture-fe/pull/75](https://github.com/SW-rocket-dan/card-capture-fe/pull/75)
