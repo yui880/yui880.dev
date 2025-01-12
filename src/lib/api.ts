@@ -12,7 +12,7 @@ const POST_PATH = path.join(process.cwd(), BASE_PATH);
  * 경로에 대한 메타데이터를 파싱하는 함수
  * /essay/page1.mdx -> essay, page1, blog/essay/page1
  */
-const parsePostMeta = (postPath: string) => {
+export const parsePostMeta = (postPath: string) => {
   const relativePath = path.relative(BASE_PATH, postPath).replace('.mdx', '');
 
   const [category, slug] = relativePath.split('/');
@@ -47,7 +47,7 @@ const parsePost = (postPath: string): Post => {
  * 카테고리에 해당하는 글의 경로들을 반환하는 함수
  * POSTPATH로 가져온 절대 경로에서 현재 카테고리 폴더에 있는 글 추출
  */
-const getPostsPath = (category?: string) => {
+export const getPostPaths = (category?: string) => {
   const folder = category || '**';
 
   return sync(`${POST_PATH}/${folder}/*.mdx`);
@@ -57,9 +57,17 @@ const getPostsPath = (category?: string) => {
  * 카테고리에 해당하는 글들을 반환하는 함수
  * 해당 경로에서 데이터를 가져온 뒤 파싱한 데이터를 반환함
  */
-export const getPosts = (category?: string) => {
-  const paths = getPostsPath(category);
+export const getAllPosts = (category?: string) => {
+  const paths = getPostPaths(category);
   const posts = paths.map(p => parsePost(p));
 
   return posts;
+};
+
+export const getPostByPath = (category: string, slug: string) => {
+  const filePath = `${POST_PATH}/${category}/${slug}.mdx`;
+  console.log(filePath);
+  const post = parsePost(filePath);
+
+  return post;
 };
