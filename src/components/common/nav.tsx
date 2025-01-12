@@ -27,8 +27,8 @@ const Nav = () => {
     <li className="sticky flex h-16 flex-row items-end gap-5 border-b-2 border-amber-200 py-2">
       <NavItem to="/">Home</NavItem>
       <NavItem to="/blog">Blog</NavItem>
-      <NavItem to="/resume">Resume</NavItem>
-      <NavItem to="/portpolio">Portfolio</NavItem>
+      {/*<NavItem to="/resume">Resume</NavItem>*/}
+      {/*<NavItem to="/portpolio">Portfolio</NavItem>*/}
     </li>
   );
 };
