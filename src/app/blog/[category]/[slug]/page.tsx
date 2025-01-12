@@ -3,12 +3,14 @@ import { getPostByPath, getPostPaths, parsePostMeta } from '@/lib/api';
 import PostBody from '@/components/blog/post-body';
 
 type PostDetailPageProps = {
-  category: string;
-  slug: string;
+    params: {
+        category: string;
+        slug: string;
+    };
 };
 
-const PostDetailPage = ({ params: { category, slug } }: PostDetailPageProps) => {
-  const post = getPostByPath(category, slug);
+const PostDetailPage = async ({ params: { category, slug } }: PostDetailPageProps) => {
+  const post = await getPostByPath(category, slug);
 
   return (
     <div className="flex h-full w-full flex-col gap-10 bg-white px-7 py-8">
@@ -20,11 +22,13 @@ const PostDetailPage = ({ params: { category, slug } }: PostDetailPageProps) => 
   );
 };
 
-export const generateStaticParams = () => {
-  const postPaths: string[] = getPostPaths();
-  const paramList = postPaths.map(path => parsePostMeta(path)).map(({ category, slug }) => ({ category, slug }));
+export const generateStaticParams = async () => {
+    const postPaths: string[] = getPostPaths();
+    const paramList = postPaths
+        .map(path => parsePostMeta(path))
+        .map(({ category, slug }) => ({ category, slug }));
 
-  return paramList;
+    return paramList;
 };
 
 export default PostDetailPage;

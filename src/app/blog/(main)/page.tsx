@@ -1,8 +1,8 @@
 import { getAllPosts } from '@/lib/api';
 import PostItem from '@/components/blog/post-item';
 
-const BlogPage = () => {
-  const posts = getAllPosts();
+const BlogPage = async () => {
+  const posts = await getAllPosts();
 
   return (
     <div className="flex flex-col gap-2">
