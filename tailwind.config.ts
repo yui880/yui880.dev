@@ -11,11 +11,12 @@ export default {
       colors: {
         background: '#FAF9F8',
         foreground: 'var(--foreground)',
+        code: '#dd4a68',
       },
       fontFamily: {
         Pretendard: ['Pretendard'],
       },
     },
   },
-  plugins: [],
+  plugins: [require('@tailwindcss/typography')],
 } satisfies Config;

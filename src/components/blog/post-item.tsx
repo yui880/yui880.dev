@@ -11,7 +11,6 @@ const PostItem = ({ category, title, path, coverImage, date }: Post) => {
           <p className="text-sm text-gray-500">{date}</p>
         </div>
       </div>
-      ]
     </Link>
   );
 };
