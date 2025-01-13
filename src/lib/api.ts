@@ -61,6 +61,9 @@ export const getAllPosts = async (category?: string) => {
   const paths = getPostPaths(category);
   const posts = await Promise.all(paths.map(p => parsePost(p)));
 
+  // 최신순으로 정렬
+  posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   return posts;
 };
 
