@@ -1,12 +1,18 @@
 import PostHeader from '@/components/blog/post-header';
 import { getPostByPath, getPostPaths, parsePostMeta } from '@/lib/api';
 import PostBody from '@/components/blog/post-body';
+import { Metadata } from 'next';
 
 type PostDetailPageProps = {
   params: {
     category: string;
     slug: string;
   };
+};
+
+export const metadata: Metadata = {
+  title: 'yui880.dev',
+  description: 'Archive',
 };
 
 const PostDetailPage = async ({ params: { category, slug } }: PostDetailPageProps) => {
