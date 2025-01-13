@@ -119,6 +119,7 @@
         font-family: "Pretendard", 'sans-serif';
         user-select: none;
         overscroll-behavior: none;
+        scroll-behavior: smooth;
     }
   :root {
         --background: 0 0% 100%;

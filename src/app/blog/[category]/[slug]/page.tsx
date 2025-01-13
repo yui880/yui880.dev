@@ -1,7 +1,8 @@
 import PostHeader from '@/components/blog/post-header';
-import { getPostByPath, getPostPaths, parsePostMeta } from '@/lib/api';
+import { getPostByPath, getPostPaths, parseMDXTags, parsePostMeta } from '@/lib/api';
 import PostBody from '@/components/blog/post-body';
 import { Metadata } from 'next';
+import TableOfContent from '@/components/blog/table-of-content';
 
 type PostDetailPageProps = {
   params: {
@@ -17,13 +18,17 @@ export const metadata: Metadata = {
 
 const PostDetailPage = async ({ params: { category, slug } }: PostDetailPageProps) => {
   const post = await getPostByPath(category, slug);
+  const headingList = parseMDXTags(post.content);
 
   return (
-    <div className="flex h-full w-full flex-col gap-10 bg-white px-7 py-8">
-      <PostHeader post={post} />
-      <div className="prose max-w-none">
-        <PostBody post={post} />
+    <div className="relative flex h-full">
+      <div className="flex h-full w-full flex-1 flex-col gap-10 bg-white px-7 py-8">
+        <PostHeader post={post} />
+        <div className="prose max-w-none">
+          <PostBody post={post} />
+        </div>
       </div>
+      <TableOfContent headingList={headingList} />
     </div>
   );
 };
