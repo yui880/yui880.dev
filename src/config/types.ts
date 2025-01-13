@@ -4,12 +4,15 @@ export type PostSummary = {
   coverImage: string;
 };
 
-export type Post = {
+export type Post = PostSummary & {
   category: string;
   slug: string;
-  title: string;
-  date: Date;
-  coverImage: string;
   path: string;
   content: string;
+};
+
+export type HeadingItem = {
+  text: string;
+  link: string;
+  indent: number;
 };

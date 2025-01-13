@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import { Post, PostSummary } from '@/config/types';
+import { HeadingItem, Post, PostSummary } from '@/config/types';
 import { sync } from 'glob';
 
 // 현재 post의 절대 경로를 추출
@@ -69,4 +69,28 @@ export const getPostByPath = async (category: string, slug: string) => {
   const post = parsePost(filePath);
 
   return post;
+};
+
+/**
+ * mdx 파일에서 h2, h3 태그의 정보(제목, 링크, 깊이)를 추출
+ * 목차에 출력될 데이터를 추출하기 위한 목적
+ */
+export const parseMDXTags = (content: string): HeadingItem[] => {
+  const regex = /^(##|###) (.*$)/gim; // h2, h3 태그 추출
+  const headingList = content.match(regex);
+
+  return (
+    headingList?.map((heading: string) => ({
+      text: heading.replace('##', '').replace('#', ''), // <h2>, </h2> 태그 제거
+      link:
+        '#' +
+        heading
+          .replace('# ', '')
+          .replace('#', '') // 태그 제거 후
+          .replace(/[\[\]:!@#$/%^&*()+=,.]/g, '') // 특수 문자 제거
+          .replace(/ /g, '-') // 공백을 -로 변경
+          .toLowerCase(),
+      indent: (heading.match(/#/g)?.length || 2) - 2, // h3 태그는 1단계 들여쓰기
+    })) || []
+  );
 };
