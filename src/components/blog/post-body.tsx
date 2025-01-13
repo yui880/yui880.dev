@@ -12,23 +12,18 @@ const PostBody = ({ post }: { post: Post }) => {
     <MDXRemote
       source={post.content}
       options={{
+        parseFrontmatter: true,
         mdxOptions: {
-          remarkPlugins: [
-            // 깃허브 Flavored 마크다운 지원 추가 (version downgrade)
-            remarkGfm,
-            // mdx 1줄 개행 지원
-            remarkBreaks,
-          ],
+          remarkPlugins: [remarkGfm, remarkBreaks],
           rehypePlugins: [
-            // pretty code block
+            rehypeSlug,
             [
               rehypePrettyCode,
               {
-                theme: { dark: 'github-dark-dimmed', light: 'github-light' },
+                theme: 'one-light',
+                keepBackground: true,
               },
             ],
-            // toc id를 추가하고 제목을 연결
-            rehypeSlug,
           ],
         },
       }}
