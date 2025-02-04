@@ -63,6 +63,7 @@ export default {
       },
       fontFamily: {
         Pretendard: ['Pretendard'],
+        poppins: ['var(--font-poppins)'],
       },
       borderRadius: {
         lg: 'var(--radius)',

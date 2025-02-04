@@ -3,6 +3,7 @@ import './globals.css';
 import Nav from '@/components/common/nav';
 import Container from '@/components/common/container';
 import Footer from '@/components/common/footer';
+import { poppins } from '@/config/fonts';
 
 export const metadata: Metadata = {
   title: 'yui880.dev',
@@ -16,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-background font-Pretendard">
+      <body className={`${poppins.variable} bg-background font-Pretendard`}>
         <Container>
           <Nav />
           {children}
