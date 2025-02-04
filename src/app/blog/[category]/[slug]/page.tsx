@@ -22,13 +22,15 @@ const PostDetailPage = async ({ params: { category, slug } }: PostDetailPageProp
 
   return (
     <div className="relative flex h-full">
-      <div className="flex h-full w-full flex-1 flex-col gap-10 bg-white px-7 py-8">
+      <div className="flex h-full w-full flex-1 flex-col gap-10 bg-white px-9 py-8">
         <PostHeader post={post} />
-        <div className="prose max-w-none">
+        <div className="prose">
           <PostBody post={post} />
         </div>
       </div>
-      <TableOfContent headingList={headingList} />
+      <div className="hidden xl:block">
+        <TableOfContent headingList={headingList} />
+      </div>
     </div>
   );
 };
