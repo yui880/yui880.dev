@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -22,9 +22,40 @@ const NavItem = ({ to, children }: { to: string; children: React.ReactNode }) =>
   );
 };
 
-const Nav = () => {
+const Nav = ({ isTransparent = false }: { isTransparent: boolean }) => {
+  /**
+   * 스크롤 위치에 따라서 네비게이션 바의 배경 색을 변경하는 로직
+   * 메인 화면에서 위치에 따라서 투명 <-> 흰 배경으로 바뀌어야 해서 구현
+   */
+  const [navBg, setNavBg] = useState('bg-transparent');
+  const documentHeight = document.documentElement.clientHeight - 56; // 뷰포트 높이 - 네비게이션바 높이
+
+  const scrollNavHandler = () => {
+    if (!isTransparent) return;
+
+    if (window.scrollY < 56) {
+      setNavBg('bg-white');
+    } else {
+      setNavBg('bg-transparent backdrop-blur-md ');
+    }
+  };
+
+  useEffect(() => {
+    if (isTransparent) {
+      window.addEventListener('scroll', scrollNavHandler);
+    }
+
+    return () => {
+      if (isTransparent) {
+        window.removeEventListener('scroll', scrollNavHandler);
+      }
+    };
+  }, [isTransparent]);
+
   return (
-    <li className="sticky flex h-16 flex-row items-end gap-5 border-b-2 border-amber-200 py-2">
+    <li
+      className={`fixed z-10 flex h-14 w-full flex-row items-end justify-center gap-5 border-b ${navBg} flex items-center py-2`}
+    >
       <NavItem to="/">Home</NavItem>
       <NavItem to="/blog">Blog</NavItem>
       {/*<NavItem to="/resume">Resume</NavItem>*/}
