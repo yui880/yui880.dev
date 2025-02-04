@@ -120,6 +120,7 @@
         user-select: none;
         overscroll-behavior: none;
         scroll-behavior: smooth;
+        scrollbar-gutter: stable;
     }
   :root {
         --background: 0 0% 100%;
