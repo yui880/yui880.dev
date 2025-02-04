@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Nav from '@/components/common/nav';
-import Container from '@/components/common/container';
 import Footer from '@/components/common/footer';
 import { poppins } from '@/config/fonts';
 
@@ -17,12 +16,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${poppins.variable} bg-background font-Pretendard`}>
-        <Container>
-          <Nav />
-          {children}
-          <Footer />
-        </Container>
+      <body className={`${poppins.variable} flex flex-col bg-white font-Pretendard`}>
+        <Nav isTransparent={true} />
+        <div className="pt-14">{children}</div>
+        <Footer />
       </body>
     </html>
   );
