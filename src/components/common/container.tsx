@@ -5,7 +5,7 @@ type ContainerProps = {
 };
 
 const Container = ({ children }: ContainerProps) => {
-  return <div className="mx-auto flex max-w-screen-md flex-col">{children}</div>;
+  return <div className="laptop:max-w-[850px] mx-auto flex max-w-screen-md flex-col">{children}</div>;
 };
 
 export default Container;
