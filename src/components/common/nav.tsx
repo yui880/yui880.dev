@@ -28,12 +28,12 @@ const Nav = ({ isTransparent = false }: { isTransparent: boolean }) => {
    * 메인 화면에서 위치에 따라서 투명 <-> 흰 배경으로 바뀌어야 해서 구현
    */
   const [navBg, setNavBg] = useState('bg-transparent');
-  const documentHeight = document.documentElement.clientHeight - 56; // 뷰포트 높이 - 네비게이션바 높이
 
   const scrollNavHandler = () => {
     if (!isTransparent) return;
 
     if (window.scrollY < 56) {
+      // 뷰포트 높이
       setNavBg('bg-white');
     } else {
       setNavBg('bg-transparent backdrop-blur-md ');
@@ -54,7 +54,7 @@ const Nav = ({ isTransparent = false }: { isTransparent: boolean }) => {
 
   return (
     <li
-      className={`fixed z-10 flex h-14 w-full flex-row items-end justify-center gap-5 border-b ${navBg} flex items-center py-2`}
+      className={`fixed right-0 z-10 flex h-14 w-full flex-row items-end justify-center gap-5 border-b ${navBg} flex items-center py-2 text-[15px]`}
     >
       <NavItem to="/">Home</NavItem>
       <NavItem to="/blog">Blog</NavItem>
