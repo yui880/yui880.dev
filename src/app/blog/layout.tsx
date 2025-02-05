@@ -9,7 +9,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className={`${poppins.variable} bg-white font-Pretendard`}>
+    <div className={`${poppins.variable} w-full bg-white font-Pretendard`}>
       <Container>
         {children}
         <Footer />

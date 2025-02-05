@@ -24,7 +24,7 @@ const PostDetailPage = async ({ params: { category, slug } }: PostDetailPageProp
     <div className="relative flex h-full">
       <div className="flex h-full w-full flex-1 flex-col gap-10 bg-white px-9 py-8">
         <PostHeader post={post} />
-        <div className="prose">
+        <div className="prose max-w-none">
           <PostBody post={post} />
         </div>
       </div>

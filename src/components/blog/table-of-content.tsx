@@ -8,11 +8,11 @@ const TableOfContent = ({ headingList }: { headingList: HeadingItem[] }) => {
   const activeIdList = useHeadingsObserver('h2, h3');
 
   return (
-    <aside className="laptop:ml-[50px] absolute left-full ml-[20px] hidden h-[calc(100%+150px)] min-w-[250px] md:block">
+    <aside className="absolute left-full ml-[0px] hidden h-[calc(100%+150px)] min-w-[250px] md:block laptop:ml-[30px]">
       <div className="sticky bottom-0 top-[200px] mt-[220px] overflow-y-auto">
         <div className="mb-4 border-l px-4">
-          <div className="laptop:text-[17px] mb-1 text-[15px] font-bold">On this page</div>
-          <ul className="laptop:text-[13px] text-[12px]">
+          <div className="mb-1 text-[15px] font-bold laptop:text-[17px]">On this page</div>
+          <ul className="text-[12px] laptop:text-[13px]">
             {headingList.map(item => {
               const isH3 = item.indent === 1;
               const isIntersecting = activeIdList.includes(item.link);
