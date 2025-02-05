@@ -1,4 +1,6 @@
 import { MDXComponents } from 'mdx/types';
+import React from 'react';
+import MDXImage from '@/components/mdx/mdx-image';
 
 export const MdxComponents: MDXComponents = {
   pre: ({ children, ...props }: any) => {
@@ -8,4 +10,5 @@ export const MdxComponents: MDXComponents = {
       </pre>
     );
   },
+  img: MDXImage,
 } as MDXComponents;
