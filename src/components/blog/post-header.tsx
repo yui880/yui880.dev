@@ -17,6 +17,7 @@ const PostHeader = ({ post }: { post: Post }) => {
         <div className="pb-8 pt-5">
           <Image
             src={post.coverImage as string}
+            alt="coverimage"
             width={0}
             height={0}
             sizes="100vw"
