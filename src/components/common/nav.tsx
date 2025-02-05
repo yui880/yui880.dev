@@ -54,12 +54,14 @@ const Nav = ({ isTransparent = false }: { isTransparent: boolean }) => {
 
   return (
     <li
-      className={`fixed right-0 z-10 flex h-14 w-full flex-row items-end justify-center gap-5 border-b ${navBg} flex items-center py-2 text-[15px]`}
+      className={`fixed right-0 z-10 flex h-14 w-full items-end justify-center border-b px-8 ${navBg} items-center py-2 text-[15px]`}
     >
-      <NavItem to="/">Home</NavItem>
-      <NavItem to="/blog">Blog</NavItem>
-      {/*<NavItem to="/resume">Resume</NavItem>*/}
-      {/*<NavItem to="/portpolio">Portfolio</NavItem>*/}
+      <div className="flex w-[900px] flex-row gap-5 px-3">
+        <NavItem to="/">Home</NavItem>
+        <NavItem to="/blog">Blog</NavItem>
+        {/*<NavItem to="/resume">Resume</NavItem>*/}
+        {/*<NavItem to="/portpolio">Portfolio</NavItem>*/}
+      </div>
     </li>
   );
 };
