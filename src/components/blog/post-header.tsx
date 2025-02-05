@@ -1,13 +1,30 @@
 import { Post } from '@/config/types';
+import Image from 'next/image';
+import React from 'react';
 
 const PostHeader = ({ post }: { post: Post }) => {
   const { category, title, date } = post;
-  
+
   return (
     <div className="flex flex-col gap-2">
-      <p className="mb-1 w-fit rounded-md border px-2 py-0.5 text-[15px] font-medium text-code">{category}</p>
-      <p className="text-3xl font-semibold">{title}</p>
-      <p className="text-sm text-gray-500">{date.toString()}</p>
+      <p className="mb-1 w-fit rounded-full bg-black px-3 py-1 text-[15px] font-medium text-white">{category}</p>
+      <p className="text-[40px] font-semibold leading-[1.4]">{title}</p>
+      <p></p>
+      <div className="mt-2 border-t pt-3">
+        <p className="text-[15px] text-gray-500">{date.toString()}</p>
+      </div>
+      {post.coverImage !== '' && (
+        <div className="pb-8 pt-5">
+          <Image
+            src={post.coverImage as string}
+            width={0}
+            height={0}
+            sizes="100vw"
+            className="h-auto w-auto max-w-full rounded-xl"
+            style={{ objectFit: 'contain' }}
+          />
+        </div>
+      )}
     </div>
   );
 };
