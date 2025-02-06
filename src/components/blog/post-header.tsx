@@ -21,8 +21,8 @@ const PostHeader = ({ post }: { post: Post }) => {
             width={0}
             height={0}
             sizes="100vw"
-            className="h-auto w-auto max-w-full rounded-xl"
-            style={{ objectFit: 'contain' }}
+            className="h-[400px] w-full max-w-full rounded-md"
+            style={{ objectFit: 'cover' }}
           />
         </div>
       )}
