@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${poppins.variable} flex flex-col bg-white font-Pretendard`}>
         <Nav isTransparent={true} />
-        <div className="pt-14">{children}</div>
+        <div className="flex justify-center pt-14">{children}</div>
         <Footer />
       </body>
     </html>

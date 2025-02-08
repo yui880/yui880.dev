@@ -1,7 +1,7 @@
 import { poppins } from '@/config/fonts';
 import Container from '@/components/common/container';
 import Footer from '@/components/common/footer';
-import '../globals.css';
+import '../../../globals.css';
 
 export default function RootLayout({
   children,
