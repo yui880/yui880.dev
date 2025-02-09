@@ -59,7 +59,7 @@ const Nav = ({ isTransparent = false }: { isTransparent: boolean }) => {
       <div className="flex w-[900px] flex-row gap-5 px-3">
         <NavItem to="/">Home</NavItem>
         <NavItem to="/blog">Blog</NavItem>
-        {/*<NavItem to="/resume">Resume</NavItem>*/}
+        <NavItem to="/about">About</NavItem>
         {/*<NavItem to="/portpolio">Portfolio</NavItem>*/}
       </div>
     </li>
