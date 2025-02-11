@@ -1,4 +1,5 @@
 import BorderBox from '@/components/common/border-box';
+import Link from 'next/link';
 
 const AboutPage = () => {
   return (
@@ -70,41 +71,45 @@ const AboutPage = () => {
 
       <div className="flex flex-col gap-3">
         <p className="text-xl font-semibold">Projects</p>
-        <BorderBox className="cursor-pointer hover:drop-shadow-md">
-          <div className="flex w-full items-center justify-between">
-            <p className="text-[20px] font-medium">Card Capture</p>
-            <p className="text-sm text-gray-500">
-              <span className="text-highlight-blue">소프트웨어 마에스트로</span> | 2024.05 - 2024.11
+        <Link href="/about/project/card-capture">
+          <BorderBox className="hover:drop-shadow-md">
+            <div className="flex w-full items-center justify-between">
+              <p className="text-[20px] font-medium">Card Capture</p>
+              <p className="text-sm text-gray-500">
+                <span className="text-highlight-blue">소프트웨어 마에스트로</span> | 2024.05 - 2024.11
+              </p>
+            </div>
+            <p className="mt-1 text-sm font-light text-gray-600">LLM AI를 이용한 카드뉴스 제작 서비스</p>
+            <p className="mt-3 text-[15px] text-gray-700">
+              프론트엔드 1인 개발, 기획, 운영, 홍보 | 총 방문자 3K 달성 / 카드뉴스 제작시간 5분 이내로 단축
             </p>
-          </div>
-          <p className="mt-1 text-sm font-light text-gray-600">LLM AI를 이용한 카드뉴스 제작 서비스</p>
-          <p className="mt-3 text-[15px] text-gray-700">
-            프론트엔드 1인 개발, 기획, 운영, 홍보 | 총 방문자 3K 달성 / 카드뉴스 제작시간 5분 이내로 단축
-          </p>
-          <div className="mt-3 flex flex-row items-center gap-2">
-            <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">Next.js 14</p>
-            <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">TypeScript</p>
-            <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">Zustand</p>
-            <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">Tailwind CSS</p>
-          </div>
-        </BorderBox>
-        <BorderBox className="cursor-pointer hover:drop-shadow-md">
-          <div className="flex w-full items-center justify-between">
-            <p className="text-[20px] font-medium">With too With two</p>
-            <p className="text-sm text-gray-500">
-              <span className="text-highlight-blue">캡스톤 디자인</span> | 2023.05 - 2023.10
+            <div className="mt-3 flex flex-row items-center gap-2">
+              <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">Next.js 14</p>
+              <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">TypeScript</p>
+              <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">Zustand</p>
+              <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">Tailwind CSS</p>
+            </div>
+          </BorderBox>
+        </Link>
+        <Link href="/about/project/with-too-with-two">
+          <BorderBox className="cursor-pointer hover:drop-shadow-md">
+            <div className="flex w-full items-center justify-between">
+              <p className="text-[20px] font-medium">With too With two</p>
+              <p className="text-sm text-gray-500">
+                <span className="text-highlight-blue">캡스톤 디자인</span> | 2023.05 - 2023.10
+              </p>
+            </div>
+            <p className="mt-1 text-sm font-light text-gray-600">신뢰성 있는 해외여행 동행 구인 서비스</p>
+            <p className="mt-3 text-[15px] text-gray-700">
+              프론트엔드 1인 개발, 기획 | 2023 캡스톤디자인 졸업작품 전시회 우수작품
             </p>
-          </div>
-          <p className="mt-1 text-sm font-light text-gray-600">신뢰성 있는 해외여행 동행 구인 서비스</p>
-          <p className="mt-3 text-[15px] text-gray-700">
-            프론트엔드 1인 개발, 기획 | 2023 캡스톤디자인 졸업작품 전시회 우수작품
-          </p>
-          <div className="mt-3 flex flex-row items-center gap-2">
-            <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">React Native</p>
-            <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">TypeScript</p>
-            <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">Redux</p>
-          </div>
-        </BorderBox>
+            <div className="mt-3 flex flex-row items-center gap-2">
+              <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">React Native</p>
+              <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">TypeScript</p>
+              <p className="bg-light-bg rounded-sm px-1.5 py-0.5 text-[14px]">Redux</p>
+            </div>
+          </BorderBox>
+        </Link>
       </div>
 
       <div className="flex flex-col gap-3">
