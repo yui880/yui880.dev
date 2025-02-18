@@ -155,7 +155,7 @@ https://github.com/SW-rocket-dan/card-capture-fe/pull/6
 - FocusBox로 렌더링된 요소는 각 버튼, 위치에 이벤트 리스너가 등록되어 있어서, 특정 위치를 클릭해서 드래그하게 되면 그 위치에 맞는 이벤트가 발생하고 처리되며 요소가 변경된다.
 
 ## 1. useDrag
-#### 동작 방식
+### 동작 방식
 동작을 설명하기에 앞서 각 요소의 좌표는 왼쪽 위(그림에서 별표)를 기준으로 하고 있다. 가운데가 아닌 왼쪽 위가 기준이기 때문에 좌표 계산시에 항상 그 점을 고려해줘야 했다.
 
 ![이미지](/_post/cardcapture/drag-rotate-resize/2.png)
@@ -171,7 +171,7 @@ https://github.com/SW-rocket-dan/card-capture-fe/pull/6
     - 화면에는 위치가 바로 업데이트 되어 마우스 이동과 동시에 요소가 움직이는 것으로 보인다.
 3. 이동이 끝나면 최종 위치를 CardStore에 저장한다.
 
-#### 코드
+### 코드
 ```typescript
 type UseDragProps = {
   cardId: number;
@@ -287,7 +287,7 @@ const useDrag = ({
 
 export default useDrag;
 ```
-#### 어려움 / 고민
+### 어려움 / 고민
 요소의 위치가 변경될 때 바로 CardStore에 저장을 할까? 고민을 했다가 비효율적이라고 판단하여 실제 화면 렌더링 위치와 전역 상태 위치를 분리해서 조작하였다.
 - layer는 배열로 관리되고 있기 때문에 매 업데이트때 마다 순회해서 요소를 찾아야한다. -> 수많은 위치 업데이트가 발생할텐데 매번 배열 순회하는 건 매우 비효율적이다.
 - 또한 지금은 상태 업데이트 히스토리를 기록하고 있기 때문에 전역 상태 변경을 모두 추적하고 있다. (정확하게 말하면 커맨드로 인해 전역 상태 변경이 일어나기 때문에 커맨드가 추적되고 있다.) 만약 바로 상태 업데이트 하는 로직으로 만들었다면 모든 이동이 다 커맨드로 기록되어 원하는 대로 히스토리가 작동하지 않았을 것이다.
@@ -417,6 +417,7 @@ const useRotate = ({ cardId, layerId, boxRef, curPosition, setCurPosition }: Use
 
 export default useRotate;
 ```
+### 어려움 / 고민
 
 
 ## 3. useResize
